@@ -705,8 +705,12 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	double time_ptt;	/* Time when PTT is turned on. */
 	double time_now;	/* Current time. */
 
+	unsigned char ACK[60];		// Should never get more that one outstanding ackmode frame, but to be safe..
+	int acklen = 0;
+	int Client;
 
 	int nb;
+#define FEND 0xc0
 
 /* 
  * Turn on transmitter.
@@ -743,6 +747,17 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	text_color_set(DW_COLOR_DEBUG);
 	dw_printf ("xmit_thread: flen=%d, nb=%d, num_bits=%d, numframe=%d\n", flen, nb, num_bits, numframe);
 #endif
+		if (pp->KISSCMD == 12)		// ACKMODE
+		{
+			// return an ack
+
+			ACK[acklen++] = FEND;
+			ACK[acklen++] = pp->KISSCMD;
+			memcpy(&ACK[acklen], &pp->ACK, 2);
+			acklen += 2;
+			ACK[acklen++] = FEND;
+			Client = pp->Client;
+		}
 	ax25_delete (pp);
 
 /*
@@ -794,6 +809,17 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	        text_color_set(DW_COLOR_DEBUG);
 	        dw_printf ("xmit_thread: flen=%d, nb=%d, num_bits=%d, numframe=%d\n", flen, nb, num_bits, numframe);
 #endif
+
+		if (pp->KISSCMD == 12)		// ACKMODE
+		{
+			// return an ack
+
+			ACK[acklen++] = FEND;
+			ACK[acklen++] = pp->KISSCMD;
+			memcpy(&ACK[acklen], &pp->ACK, 2);
+			acklen += 2;
+			ACK[acklen++] = FEND;
+		}
 	        ax25_delete (pp);
 
 	        break;
@@ -876,6 +902,14 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 #endif
 		
 	ptt_set (OCTYPE_PTT, chan, 0);
+
+	// Send any ackmode acks
+
+	if (acklen)
+	{
+		kissnet_raw_send(Client, ACK, acklen);
+	}
+
 
 } /* end xmit_ax25_frames */
 

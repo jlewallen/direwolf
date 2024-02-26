@@ -653,7 +653,36 @@ void kissnet_send_rec_packet (int chan, int kiss_cmd, unsigned char *fbuf, int f
 	
 } /* end kissnet_send_rec_packet */
 
+void kissnet_raw_send(int Client, unsigned char * ACK, int acklen)
+{
+	int err;
+	
+	if (kiss_debug) 
+		kiss_debug_print (1, NULL, ACK, acklen);
 
+#if __WIN32__	
+	        err = send (client_sock[Client], (char*)ACK, acklen , 0);
+			if (err == SOCKET_ERROR)
+			{
+				text_color_set(DW_COLOR_ERROR);
+				dw_printf ("\nError %d sending message to KISS client application.  Closing connection.\n\n", WSAGetLastError());
+				closesocket (client_sock);
+				client_sock = -1;
+				WSACleanup();
+			}
+#else
+			err = SOCK_SEND (client_sock[Client], (char*)ACK, acklen);
+			if (err <= 0)
+			{
+				perror("raw");
+				text_color_set(DW_COLOR_ERROR);
+				dw_printf ("\nError sending message to KISS client application.  Closing connection.\n\n");
+				close (client_sock[0]);
+				client_sock[0] = -1;    
+			}
+#endif
+
+}
 
 /*-------------------------------------------------------------------
  *

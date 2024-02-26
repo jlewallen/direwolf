@@ -69,6 +69,9 @@
 #define AX25_PID_SEGMENTATION_FRAGMENT 0x08
 #define AX25_PID_ESCAPE_CHARACTER 0xff
 
+#define AX25_PAD_C			// Need to make visible for ACKMODE
+
+
 
 #ifdef AX25_PAD_C	/* Keep this hidden - implementation could change. */
 
@@ -142,6 +145,13 @@ struct packet_s {
 				
 
 	int magic2;		/* Will get stomped on if above overflows. */
+
+	char Client;			// So we can send ack to right one
+	unsigned char KISSCMD;	// KISS command byte (0 or 12 for ackmode)
+	unsigned short ACK	 ;	// ACK value for Ackmode
+
+
+
 };
 
 
