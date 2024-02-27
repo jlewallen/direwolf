@@ -809,6 +809,7 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 #endif
 
 	if (pp->kiss_cmd > 0) {
+		dw_printf ("xmit_init: queue ACK %d\n", pp->ack);
 		ack_reply[ack_len++] = 0xc0;
 		ack_reply[ack_len++] = pp->kiss_cmd;
 		memcpy(&ack_reply[ack_len], &pp->ack, sizeof(unsigned short));
@@ -874,20 +875,21 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	        text_color_set(DW_COLOR_DEBUG);
 	        dw_printf ("xmit_thread: t=%.3f, nb=%d, num_bits=%d, numframe=%d\n", dtime_now()-time_ptt, nb, num_bits, numframe);
 #endif
-			if (pp->kiss_cmd > 0) {
-				ack_reply[ack_len++] = 0xc0;
-				ack_reply[ack_len++] = pp->kiss_cmd;
-				memcpy(&ack_reply[ack_len], &pp->ack, sizeof(unsigned short));
-				ack_len += sizeof(unsigned short);
-				ack_reply[ack_len++] = 0xc0;
-				if (client < 0) {
-					kps = pp->kps;
-					client = pp->client;
-				} else {
-					// Can clients change in here?
-					// ASSERT(client == pp->client);
-				}
+		if (pp->kiss_cmd > 0) {
+			dw_printf ("xmit_init: queue ACK %d\n", pp->ack);
+			ack_reply[ack_len++] = 0xc0;
+			ack_reply[ack_len++] = pp->kiss_cmd;
+			memcpy(&ack_reply[ack_len], &pp->ack, sizeof(unsigned short));
+			ack_len += sizeof(unsigned short);
+			ack_reply[ack_len++] = 0xc0;
+			if (client < 0) {
+				kps = pp->kps;
+				client = pp->client;
+			} else {
+				// Can clients change in here?
+				// ASSERT(client == pp->client);
 			}
+		}
 	        ax25_delete (pp);
 
 	        break;

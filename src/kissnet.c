@@ -1009,6 +1009,8 @@ void kissnet_raw_send(void *kps_arg, int client, unsigned char *buf, int len) {
 		kiss_debug_print(1, NULL, buf, len);
 	}
 
+	dw_printf ("\nKISS: send ACK (%d bytes)\n", len);
+
 #if __WIN32__	
 	        err = send(kps->client_sock[client], (char *)buf, len , 0);
 			if (err == SOCKET_ERROR) {
