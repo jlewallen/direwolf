@@ -69,6 +69,7 @@
 #define AX25_PID_SEGMENTATION_FRAGMENT 0x08
 #define AX25_PID_ESCAPE_CHARACTER 0xff
 
+#define AX25_PAD_C // Expose internal fields of packet_s for Ackmode
 
 #ifdef AX25_PAD_C	/* Keep this hidden - implementation could change. */
 
@@ -142,6 +143,12 @@ struct packet_s {
 				
 
 	int magic2;		/* Will get stomped on if above overflows. */
+
+    // Ackmode data
+    void *kps;
+    int client;
+    unsigned char kiss_cmd;
+    unsigned short ack;
 };
 
 

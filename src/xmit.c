@@ -77,6 +77,7 @@
 #include "xid.h"
 #include "dlq.h"
 #include "server.h"
+#include "kissnet.h"
 
 
 /*
@@ -745,6 +746,11 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 
 	int nb;
 
+	unsigned char ack_reply[60]; // Eh
+	void *kps = NULL;
+	int ack_len = 0;
+	int client = -1;
+
 /* 
  * Turn on transmitter.
  * Start sending leading flag bytes.
@@ -801,6 +807,22 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	text_color_set(DW_COLOR_DEBUG);
 	dw_printf ("xmit_thread: t=%.3f, nb=%d, num_bits=%d, numframe=%d\n", dtime_now()-time_ptt, nb, num_bits, numframe);
 #endif
+
+	if (pp->kiss_cmd > 0) {
+		ack_reply[ack_len++] = 0xc0;
+		ack_reply[ack_len++] = pp->kiss_cmd;
+		memcpy(&ack_reply[ack_len], &pp->ack, sizeof(unsigned short));
+		ack_len += sizeof(unsigned short);
+		ack_reply[ack_len++] = 0xc0;
+		if (client < 0) {
+			kps = pp->kps;
+			client = pp->client;
+		} else {
+			// Can clients change in here?
+			// ASSERT(client == pp->client);
+		}
+	}
+
 	ax25_delete (pp);
 
 /*
@@ -852,6 +874,20 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 	        text_color_set(DW_COLOR_DEBUG);
 	        dw_printf ("xmit_thread: t=%.3f, nb=%d, num_bits=%d, numframe=%d\n", dtime_now()-time_ptt, nb, num_bits, numframe);
 #endif
+			if (pp->kiss_cmd > 0) {
+				ack_reply[ack_len++] = 0xc0;
+				ack_reply[ack_len++] = pp->kiss_cmd;
+				memcpy(&ack_reply[ack_len], &pp->ack, sizeof(unsigned short));
+				ack_len += sizeof(unsigned short);
+				ack_reply[ack_len++] = 0xc0;
+				if (client < 0) {
+					kps = pp->kps;
+					client = pp->client;
+				} else {
+					// Can clients change in here?
+					// ASSERT(client == pp->client);
+				}
+			}
 	        ax25_delete (pp);
 
 	        break;
@@ -934,6 +970,10 @@ static void xmit_ax25_frames (int chan, int prio, packet_t pp, int max_bundle)
 #endif
 		
 	ptt_set (OCTYPE_PTT, chan, 0);
+
+	if (ack_len > 0) {
+		kissnet_raw_send(kps, client, ack_reply, ack_len);
+	}
 
 } /* end xmit_ax25_frames */
 

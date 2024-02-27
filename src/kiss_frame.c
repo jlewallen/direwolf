@@ -537,6 +537,7 @@ void kiss_process_msg (unsigned char *kiss_msg, int kiss_len, int debug, struct 
 	int chan;
 	int cmd;
 	alevel_t alevel;
+	unsigned short ack = 0;
 
 // New in 1.7:
 // We can have KISS TCP ports which convey only a single radio channel.
@@ -554,6 +555,7 @@ void kiss_process_msg (unsigned char *kiss_msg, int kiss_len, int debug, struct 
 
 	switch (cmd) 
 	{
+	  case XKISS_CMD_DATA:
 	  case KISS_CMD_DATA_FRAME:				/* 0 = Data Frame */
 
 	    // kissnet_copy clobbers first byte but we don't care
@@ -630,6 +632,12 @@ void kiss_process_msg (unsigned char *kiss_msg, int kiss_len, int debug, struct 
 	      return;
 	    }
 
+		if (cmd == XKISS_CMD_DATA) {
+			memcpy(&ack, kiss_msg + 1, 2);
+			kiss_len -= 2;
+			memmove(kiss_msg + 1, kiss_msg + 3, kiss_len - 1);
+		}
+
 	    memset (&alevel, 0xff, sizeof(alevel));
 	    packet_t pp = ax25_from_frame (kiss_msg+1, kiss_len-1, alevel);
 	    if (pp == NULL) {
@@ -637,6 +645,11 @@ void kiss_process_msg (unsigned char *kiss_msg, int kiss_len, int debug, struct 
 	       dw_printf ("ERROR - Invalid KISS data frame from client app.\n");
 	    }
 	    else {
+
+          pp->kiss_cmd = cmd;
+          pp->ack = ack;
+          pp->kps = (void *)kps;
+          pp->client = client;
 
 	      /* How can we determine if it is an original or repeated message? */
 	      /* If there is at least one digipeater in the frame, AND */
@@ -940,7 +953,7 @@ void kiss_debug_print (fromto_t fromto, char *special, unsigned char *pmsg, int 
 		"Data frame",	"TXDELAY",	"P",		"SlotTime",
 		"TXtail",	"FullDuplex",	"SetHardware",	"Invalid 7",
 		"Invalid 8", 	"Invalid 9",	"Invalid 10",	"Invalid 11",
-		"Invalid 12", 	"Invalid 13",	"Invalid 14",	"Return" };
+		"ACKMode", 	"Invalid 13",	"Invalid 14",	"Return" };
 #endif
 
 	text_color_set(DW_COLOR_DEBUG);

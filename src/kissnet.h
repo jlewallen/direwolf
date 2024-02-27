@@ -23,6 +23,7 @@ void kiss_net_set_debug (int n);
 
 void kissnet_copy (unsigned char *kiss_msg, int kiss_len, int chan, int cmd, struct kissport_status_s *from_kps, int from_client);
 
+void kissnet_raw_send(void *kps_arg, int client, unsigned char *buf, int len);
 
 #endif  // KISSNET_H
 
